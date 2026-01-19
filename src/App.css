@@ -1,7 +1,5 @@
-/* TailwindCSS base styles */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* TailwindCSS v4 import */
+@import "tailwindcss";
 
 /* Custom styles */
 .App {
@@ -38,10 +36,13 @@
 
 /* Animation for audio level bars */
 @keyframes pulse-audio {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.5;
     transform: scaleY(0.8);
   }
+
   50% {
     opacity: 1;
     transform: scaleY(1);
@@ -53,122 +54,180 @@
 }
 
 /* Smooth transitions */
-.transition-all {
+.transition-all-custom {
   transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
 
-/* Focus styles */
-.focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+/* Focus styles - using standard CSS */
+.focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #3b82f6;
 }
 
-/* Button styles */
+/* Button styles - using standard CSS instead of @apply */
 .btn-primary {
-  @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors focus-ring;
+  background-color: #2563eb;
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.15s;
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
 }
 
 .btn-secondary {
-  @apply bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors focus-ring;
+  background-color: #4b5563;
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.15s;
+}
+
+.btn-secondary:hover {
+  background-color: #374151;
 }
 
 .btn-danger {
-  @apply bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors focus-ring;
+  background-color: #dc2626;
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.15s;
+}
+
+.btn-danger:hover {
+  background-color: #b91c1c;
 }
 
 /* Card styles */
 .card {
-  @apply bg-white rounded-lg shadow-sm border border-gray-200;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border: 1px solid #e5e7eb;
 }
 
 .card-dark {
-  @apply bg-gray-800 border-gray-700;
+  background-color: #1f2937;
+  border-color: #374151;
 }
 
 /* Text styles */
 .text-muted {
-  @apply text-gray-600;
+  color: #4b5563;
 }
 
 .text-muted-dark {
-  @apply text-gray-400;
+  color: #9ca3af;
 }
 
 /* Loading spinner */
 .spinner {
-  @apply animate-spin rounded-full border-2 border-gray-300 border-t-blue-600;
+  animation: spin 1s linear infinite;
+  border-radius: 9999px;
+  border-width: 2px;
+  border-color: #d1d5db;
+  border-top-color: #2563eb;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Audio visualization */
 .audio-bar {
-  @apply bg-gray-300 rounded-sm transition-all duration-100;
+  background-color: #d1d5db;
+  border-radius: 2px;
+  transition: all 100ms;
 }
 
 .audio-bar.active {
-  @apply bg-green-500;
+  background-color: #22c55e;
 }
 
 .audio-bar.medium {
-  @apply bg-yellow-500;
+  background-color: #eab308;
 }
 
 .audio-bar.high {
-  @apply bg-red-500;
+  background-color: #ef4444;
 }
 
 /* Transcript entry animations */
 .transcript-entry {
-  @apply transform transition-all duration-200 ease-in-out;
+  transform: translateY(0);
+  transition: all 200ms ease-in-out;
 }
 
 .transcript-entry.new {
-  @apply translate-y-2 opacity-0;
+  transform: translateY(0.5rem);
+  opacity: 0;
 }
 
 .transcript-entry.visible {
-  @apply translate-y-0 opacity-100;
+  transform: translateY(0);
+  opacity: 1;
 }
 
 /* Summary highlight animation */
 .summary-highlight {
-  @apply bg-yellow-100 transition-colors duration-500;
+  background-color: #fef3c7;
+  transition: background-color 500ms;
 }
 
 /* Connection status indicator */
 .connection-indicator {
-  @apply w-2 h-2 rounded-full transition-colors duration-200;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  transition: background-color 200ms;
 }
 
 .connection-indicator.connected {
-  @apply bg-green-500;
+  background-color: #22c55e;
 }
 
 .connection-indicator.connecting {
-  @apply bg-yellow-500 animate-pulse;
+  background-color: #eab308;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .connection-indicator.disconnected {
-  @apply bg-red-500;
+  background-color: #ef4444;
 }
 
 .connection-indicator.error {
-  @apply bg-red-600;
+  background-color: #dc2626;
 }
 
 /* Modal backdrop */
 .modal-backdrop {
-  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
 }
 
 /* Responsive design helpers */
 @media (max-width: 768px) {
   .mobile-hidden {
-    @apply hidden;
+    display: none;
   }
-  
+
   .mobile-full {
-    @apply w-full;
+    width: 100%;
   }
 }
 
@@ -177,7 +236,7 @@
   .no-print {
     display: none !important;
   }
-  
+
   .print-break {
     page-break-before: always;
   }

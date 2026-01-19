@@ -91,7 +91,7 @@ export const MeetingPanel: React.FC<MeetingPanelProps> = ({
   const saveCurrentSession = (currentSummary: string, currentKeyPoints: string[]) => {
     const sessionData: MeetingSession = {
       id: sessionId,
-      title: `Meeting ${new Date(startTime).toLocaleString()} `,
+      title: `Meeting ${new Date(startTime).toLocaleString()}`,
       startTime: startTime,
       endTime: Date.now(),
       transcript: transcript,
@@ -153,14 +153,14 @@ export const MeetingPanel: React.FC<MeetingPanelProps> = ({
   };
 
   const handleExport = useCallback(() => {
-    const filename = `meeting_${sessionId}_${new Date().toISOString().slice(0, 10)} `;
+    const filename = `meeting_${sessionId}_${new Date().toISOString().slice(0, 10)}`;
 
-    let content = `Meeting ID: ${sessionId} \nDate: ${new Date().toLocaleString()} \n\n`;
-    content += `Summary: \n${summary} \n\n`;
-    content += `Key Points: \n${keyPoints.map(p => `- ${p}`).join('\n')} \n\n`;
+    let content = `Meeting ID: ${sessionId}\nDate: ${new Date().toLocaleString()}\n\n`;
+    content += `Summary:\n${summary}\n\n`;
+    content += `Key Points:\n${keyPoints.map(p => `- ${p}`).join('\n')}\n\n`;
     content += `Transcript: \n`;
     transcript.forEach(t => {
-      content += `[${new Date(t.timestamp).toLocaleTimeString()}] ${t.text} \n`;
+      content += `[${new Date(t.timestamp).toLocaleTimeString()}] ${t.text}\n`;
     });
 
     // Export as TXT
@@ -217,7 +217,7 @@ export const MeetingPanel: React.FC<MeetingPanelProps> = ({
   }, [credentials]);
 
   return (
-    <div className={`h - screen flex flex - col ${theme === 'dark' ? 'dark' : ''} `}>
+    <div className={`h-screen flex flex-col ${theme === 'dark' ? 'dark' : ''}`}>
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
@@ -228,10 +228,10 @@ export const MeetingPanel: React.FC<MeetingPanelProps> = ({
 
             {/* Connection Status */}
             <div className="flex items-center space-x-2">
-              <div className={`w - 2 h - 2 rounded - full ${webSocket.connectionState === 'connected' ? 'bg-green-500' :
-                  webSocket.connectionState === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-                    'bg-red-500'
-                } `}></div>
+              <div className={`w-2 h-2 rounded-full ${webSocket.connectionState === 'connected' ? 'bg-green-500' :
+                webSocket.connectionState === 'connecting' ? 'bg-yellow-500 animate-pulse' :
+                  'bg-red-500'
+                }`}></div>
               <span className="text-sm text-gray-600 dark:text-gray-300 capitalize">
                 {webSocket.connectionState}
               </span>

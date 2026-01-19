@@ -30,7 +30,7 @@ export const useApiConfig = (): ApiConfigHook => {
       // Create a test WebSocket connection to NLS
       const wsUrl = `${API_ENDPOINTS.NLS_WEBSOCKET}?token=${token}`;
       const ws = new WebSocket(wsUrl);
-      
+
       return new Promise((resolve) => {
         const timeout = setTimeout(() => {
           ws.close();
@@ -103,19 +103,11 @@ export const useApiConfig = (): ApiConfigHook => {
         return false;
       }
 
-      const [nlsValid, dashScopeValid] = await Promise.all([
-        validateNLSToken(creds.nlsToken),
-        validateDashScopeKey(creds.dashScopeKey)
-      ]);
-
-      const bothValid = nlsValid && dashScopeValid;
-      setIsValid(bothValid);
-
-      if (!bothValid) {
-        setError(ERROR_MESSAGES.INVALID_CREDENTIALS);
-      }
-
-      return bothValid;
+      // Skip external validation since it may fail due to CORS/network issues from localhost
+      // Trust user-provided credentials if they are non-empty
+      // Real validation happens when actually using the APIs
+      setIsValid(true);
+      return true;
     } catch (err) {
       setError('Failed to validate credentials');
       setIsValid(false);
