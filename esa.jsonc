@@ -7,8 +7,33 @@
     },
     "routes": [
         {
+            "src": "/api/ws",
+            "dest": "/api/websocket-handler"
+        },
+        {
+            "src": "/api/(.*)",
+            "dest": "/api/$1"
+        },
+        {
             "src": ".*",
             "dest": "/index.html"
         }
-    ]
+    ],
+    "functions": {
+        "api/websocket-handler.js": {
+            "runtime": "edge",
+            "memory": 128
+        },
+        "api/speech-recognition.js": {
+            "runtime": "edge", 
+            "memory": 256
+        },
+        "api/ai-summarization.js": {
+            "runtime": "edge",
+            "memory": 256
+        }
+    },
+    "env": {
+        "NODE_ENV": "production"
+    }
 }

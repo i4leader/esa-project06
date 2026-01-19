@@ -1,5 +1,7 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
-import { TranscriptEntry, MeetingPanelProps, ApiCredentials } from '../types';
+import { jsPDF } from 'jspdf';
+import { TranscriptEntry, MeetingPanelProps, MeetingSession } from '../types';
 import { useApiConfig } from '../hooks/useApiConfig';
 import { useAudioCapture } from '../hooks/useAudioCapture';
 import { useWebSocket } from '../hooks/useWebSocket';
@@ -8,6 +10,8 @@ import { TranscriptDisplay } from './TranscriptDisplay';
 import { SummaryDisplay } from './SummaryDisplay';
 import { ControlPanel } from './ControlPanel';
 import { AudioLevelIndicator } from './AudioLevelIndicator';
+import { HistoryModal } from './HistoryModal';
+import { StorageManager } from '../utils/storage';
 
 export const MeetingPanel: React.FC<MeetingPanelProps> = ({
   sessionId,
@@ -18,8 +22,10 @@ export const MeetingPanel: React.FC<MeetingPanelProps> = ({
   const [keyPoints, setKeyPoints] = useState<string[]>([]);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [language, setLanguage] = useState('zh-CN');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [startTime, setStartTime] = useState<number>(Date.now());
 
   // API configuration
   const { credentials, isValid: credentialsValid } = useApiConfig();
@@ -44,14 +50,14 @@ export const MeetingPanel: React.FC<MeetingPanelProps> = ({
   useEffect(() => {
     if (webSocket.lastMessage) {
       const message = webSocket.lastMessage;
-      
+
       switch (message.type) {
         case 'transcript':
           setTranscript(prev => {
             const existing = prev.find(entry => entry.id === message.entry.id);
             if (existing) {
               // Update existing entry
-              return prev.map(entry => 
+              return prev.map(entry =>
                 entry.id === message.entry.id ? message.entry : entry
               );
             } else {
@@ -60,19 +66,48 @@ export const MeetingPanel: React.FC<MeetingPanelProps> = ({
             }
           });
           break;
-          
+
         case 'summary':
           setSummary(message.summary);
           setKeyPoints(message.keyPoints);
           setIsGeneratingSummary(false);
+          saveCurrentSession(message.summary, message.keyPoints);
           break;
-          
+
         case 'error':
           console.error('WebSocket error:', message.message);
           break;
       }
     }
   }, [webSocket.lastMessage]);
+
+  // Save session to storage whenever key data changes
+  useEffect(() => {
+    if (transcript.length > 0) {
+      saveCurrentSession(summary, keyPoints);
+    }
+  }, [transcript, summary, keyPoints]);
+
+  const saveCurrentSession = (currentSummary: string, currentKeyPoints: string[]) => {
+    const sessionData: MeetingSession = {
+      id: sessionId,
+      title: `Meeting ${new Date(startTime).toLocaleString()} `,
+      startTime: startTime,
+      endTime: Date.now(),
+      transcript: transcript,
+      summary: currentSummary,
+      keyPoints: currentKeyPoints,
+      language: language,
+      participants: [], // TODO: Identify speakers
+      metadata: {
+        duration: Date.now() - startTime,
+        wordCount: transcript.reduce((acc, t) => acc + t.text.length, 0),
+        averageConfidence: 0, // TODO: calculate
+        exportFormats: ['json', 'txt', 'pdf']
+      }
+    };
+    StorageManager.saveMeetingSession(sessionData);
+  };
 
   // Auto-connect WebSocket when credentials are valid
   useEffect(() => {
@@ -85,33 +120,94 @@ export const MeetingPanel: React.FC<MeetingPanelProps> = ({
     setTranscript([]);
     setSummary('');
     setKeyPoints([]);
+    setStartTime(Date.now());
   }, []);
 
   const handleRefreshSummary = useCallback(() => {
     if (transcript.length === 0) return;
-    
+
     setIsGeneratingSummary(true);
-    
+
     // Send summary request through WebSocket
     const summaryRequest = {
       type: 'summary_request' as const,
       transcript: transcript.map(entry => entry.text).join(' '),
       sessionId
     };
-    
+
     if (webSocket.connectionState === 'connected') {
       (webSocket as any).sendMessage(summaryRequest);
     }
   }, [transcript, sessionId, webSocket]);
 
+  const downloadFile = (filename: string, content: string, type: string) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleExport = useCallback(() => {
-    // TODO: Implement export functionality
-    console.log('Export functionality to be implemented');
-  }, []);
+    const filename = `meeting_${sessionId}_${new Date().toISOString().slice(0, 10)} `;
+
+    let content = `Meeting ID: ${sessionId} \nDate: ${new Date().toLocaleString()} \n\n`;
+    content += `Summary: \n${summary} \n\n`;
+    content += `Key Points: \n${keyPoints.map(p => `- ${p}`).join('\n')} \n\n`;
+    content += `Transcript: \n`;
+    transcript.forEach(t => {
+      content += `[${new Date(t.timestamp).toLocaleTimeString()}] ${t.text} \n`;
+    });
+
+    // Export as TXT
+    downloadFile(`${filename}.txt`, content, 'text/plain');
+
+    // Export as PDF
+    try {
+      const doc = new jsPDF();
+
+      // Add basic support for non-latin characters?
+      // jsPDF default font doesn't support Chinese.
+      // We'll just dump content for now, noting limitations.
+      const splitText = doc.splitTextToSize(content, 180);
+
+      let y = 10;
+      splitText.forEach((line: string) => {
+        if (y > 280) {
+          doc.addPage();
+          y = 10;
+        }
+        doc.text(line, 10, y);
+        y += 7;
+      });
+
+      doc.save(`${filename}.pdf`);
+    } catch (e) {
+      console.error('PDF Export failed', e);
+    }
+  }, [sessionId, transcript, summary, keyPoints]);
 
   const toggleTheme = useCallback(() => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   }, []);
+
+  const handleLoadSession = (session: MeetingSession) => {
+    onSessionChange(session.id);
+    setTranscript(session.transcript);
+    setSummary(session.summary);
+    setLanguage(session.language);
+    setStartTime(session.startTime);
+    // Keypoints might be missing in type definition if not added to MeetingSession type
+    // But we can assume it might be part of summary or we need to update type.
+    // For now, let's check if we need to update MeetingSession type.
+    // MeetingSession type in index.ts has summary string.
+    // It doesn't have keyPoints.
+    setKeyPoints([]); // Reset or store in metadata?
+  };
 
   // Show settings modal if credentials are not configured
   useEffect(() => {
@@ -121,7 +217,7 @@ export const MeetingPanel: React.FC<MeetingPanelProps> = ({
   }, [credentials]);
 
   return (
-    <div className={`h-screen flex flex-col ${theme === 'dark' ? 'dark' : ''}`}>
+    <div className={`h - screen flex flex - col ${theme === 'dark' ? 'dark' : ''} `}>
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
@@ -129,14 +225,13 @@ export const MeetingPanel: React.FC<MeetingPanelProps> = ({
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               MeetingMind - Real-time Meeting Assistant
             </h1>
-            
+
             {/* Connection Status */}
             <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full ${
-                webSocket.connectionState === 'connected' ? 'bg-green-500' :
-                webSocket.connectionState === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-                'bg-red-500'
-              }`}></div>
+              <div className={`w - 2 h - 2 rounded - full ${webSocket.connectionState === 'connected' ? 'bg-green-500' :
+                  webSocket.connectionState === 'connecting' ? 'bg-yellow-500 animate-pulse' :
+                    'bg-red-500'
+                } `}></div>
               <span className="text-sm text-gray-600 dark:text-gray-300 capitalize">
                 {webSocket.connectionState}
               </span>
@@ -145,11 +240,11 @@ export const MeetingPanel: React.FC<MeetingPanelProps> = ({
 
           <div className="flex items-center space-x-4">
             {/* Audio Level Indicator */}
-            <AudioLevelIndicator 
-              level={audioCapture.audioLevel} 
-              isRecording={audioCapture.isRecording} 
+            <AudioLevelIndicator
+              level={audioCapture.audioLevel}
+              isRecording={audioCapture.isRecording}
             />
-            
+
             {/* Action Buttons */}
             <button
               onClick={() => setShowSettings(true)}
@@ -158,15 +253,15 @@ export const MeetingPanel: React.FC<MeetingPanelProps> = ({
             >
               ⚙️
             </button>
-            
+
             <button
-              onClick={() => {/* TODO: Implement history */}}
+              onClick={() => setShowHistory(true)}
               className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               title="History"
             >
               📋
             </button>
-            
+
             <button
               onClick={toggleTheme}
               className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -182,7 +277,7 @@ export const MeetingPanel: React.FC<MeetingPanelProps> = ({
       <div className="flex-1 flex overflow-hidden">
         {/* Transcript Panel */}
         <div className="flex-1 border-r border-gray-200 dark:border-gray-700">
-          <TranscriptDisplay 
+          <TranscriptDisplay
             transcript={transcript}
             isRecording={audioCapture.isRecording}
           />
@@ -212,6 +307,13 @@ export const MeetingPanel: React.FC<MeetingPanelProps> = ({
       <SettingsModal
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
+      />
+
+      {/* History Modal */}
+      <HistoryModal
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        onLoadSession={handleLoadSession}
       />
 
       {/* Error Display */}

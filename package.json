@@ -1,21 +1,39 @@
 {
   "name": "meetingmind",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "Real-time meeting transcription and AI summarization tool for Alibaba Cloud ESA",
+  "keywords": [
+    "meeting",
+    "transcription",
+    "AI",
+    "summarization",
+    "real-time",
+    "ESA",
+    "edge-computing"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "lint": "tsc --noEmit",
+    "deploy": "bash scripts/deploy.sh",
+    "clean": "rm -rf dist node_modules/.vite",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@types/jspdf": "^1.3.3",
+    "jspdf": "^4.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.1",
     "@testing-library/user-event": "^14.6.1",
@@ -31,5 +49,9 @@
     "typescript": "~5.9.3",
     "vite": "^7.2.4",
     "vitest": "^4.0.17"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }

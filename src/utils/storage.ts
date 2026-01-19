@@ -10,8 +10,10 @@ export class StorageManager {
    */
   static saveCredentials(credentials: ApiCredentials): void {
     try {
-      const encrypted = btoa(JSON.stringify(credentials));
-      localStorage.setItem(STORAGE_KEYS.CREDENTIALS, encrypted);
+      // Simple approach: just use JSON.stringify directly
+      // localStorage handles UTF-8 encoding automatically
+      const jsonString = JSON.stringify(credentials);
+      localStorage.setItem(STORAGE_KEYS.CREDENTIALS, jsonString);
     } catch (error) {
       console.error('Failed to save credentials:', error);
       throw new Error('Failed to save API credentials');
@@ -23,11 +25,10 @@ export class StorageManager {
    */
   static getCredentials(): ApiCredentials | null {
     try {
-      const encrypted = localStorage.getItem(STORAGE_KEYS.CREDENTIALS);
-      if (!encrypted) return null;
-      
-      const decrypted = atob(encrypted);
-      return JSON.parse(decrypted) as ApiCredentials;
+      const jsonString = localStorage.getItem(STORAGE_KEYS.CREDENTIALS);
+      if (!jsonString) return null;
+
+      return JSON.parse(jsonString) as ApiCredentials;
     } catch (error) {
       console.error('Failed to retrieve credentials:', error);
       return null;
@@ -141,6 +142,34 @@ export class StorageManager {
   }
 
   /**
+   * Save full meeting session data
+   */
+  static saveMeetingSession(session: any): void {
+    try {
+      const key = `meetingmind.session.${session.id}`;
+      localStorage.setItem(key, JSON.stringify(session));
+      this.addSession(session.id); // Ensure ID is in the list
+    } catch (error) {
+      console.error('Failed to save session:', error);
+      throw new Error('Failed to save session data');
+    }
+  }
+
+  /**
+   * Retrieve full meeting session data
+   */
+  static getMeetingSession(sessionId: string): any | null {
+    try {
+      const key = `meetingmind.session.${sessionId}`;
+      const data = localStorage.getItem(key);
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      console.error('Failed to retrieve session:', error);
+      return null;
+    }
+  }
+
+  /**
    * Clear all stored data
    */
   static clearAll(): void {
@@ -168,7 +197,7 @@ export class StorageManager {
    */
   static getStorageInfo(): { used: number; available: number } {
     let used = 0;
-    
+
     // Calculate used space
     for (let key in localStorage) {
       if (localStorage.hasOwnProperty(key)) {
@@ -178,7 +207,7 @@ export class StorageManager {
 
     // Estimate available space (most browsers have ~5-10MB limit)
     const estimated = 5 * 1024 * 1024; // 5MB in bytes
-    
+
     return {
       used,
       available: Math.max(0, estimated - used)

@@ -96,6 +96,13 @@ export const useApiConfig = (): ApiConfigHook => {
     setError(null);
 
     try {
+      // Check for empty or whitespace-only credentials
+      if (!creds.nlsToken.trim() || !creds.dashScopeKey.trim()) {
+        setError('Credentials cannot be empty or contain only whitespace');
+        setIsValid(false);
+        return false;
+      }
+
       const [nlsValid, dashScopeValid] = await Promise.all([
         validateNLSToken(creds.nlsToken),
         validateDashScopeKey(creds.dashScopeKey)

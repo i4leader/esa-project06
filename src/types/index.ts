@@ -30,6 +30,7 @@ export interface MeetingSession {
   endTime?: number;
   transcript: TranscriptEntry[];
   summary: string;
+  keyPoints?: string[]; // Optional for backward compatibility or if summary fails
   language: string;
   participants: string[];
   metadata: SessionMetadata;

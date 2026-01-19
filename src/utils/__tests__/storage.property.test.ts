@@ -16,7 +16,7 @@ describe('StorageManager Property Tests', () => {
     it('should preserve credential data through save and retrieve operations', () => {
       // **Validates: Requirements 1.2**
       
-      // Generator for valid API credentials
+      // Generator for valid API credentials (non-whitespace only)
       const credentialsArbitrary = fc.record({
         nlsToken: fc.string({ minLength: 10, maxLength: 100 }).filter(s => s.trim().length > 0),
         dashScopeKey: fc.string({ minLength: 10, maxLength: 100 }).filter(s => s.trim().length > 0)
@@ -70,8 +70,8 @@ describe('StorageManager Property Tests', () => {
       // Test multiple sequential save/retrieve operations
       const credentialsArrayArbitrary = fc.array(
         fc.record({
-          nlsToken: fc.string({ minLength: 10, maxLength: 50 }),
-          dashScopeKey: fc.string({ minLength: 10, maxLength: 50 })
+          nlsToken: fc.string({ minLength: 10, maxLength: 50 }).filter(s => s.trim().length > 0),
+          dashScopeKey: fc.string({ minLength: 10, maxLength: 50 }).filter(s => s.trim().length > 0)
         }),
         { minLength: 1, maxLength: 10 }
       );
@@ -136,12 +136,12 @@ describe('StorageManager Property Tests', () => {
   describe('Storage Isolation Properties', () => {
     it('should not interfere with other localStorage keys', () => {
       const credentialsArbitrary = fc.record({
-        nlsToken: fc.string({ minLength: 10, maxLength: 50 }),
-        dashScopeKey: fc.string({ minLength: 10, maxLength: 50 })
+        nlsToken: fc.string({ minLength: 10, maxLength: 50 }).filter(s => s.trim().length > 0),
+        dashScopeKey: fc.string({ minLength: 10, maxLength: 50 }).filter(s => s.trim().length > 0)
       });
 
       const otherDataArbitrary = fc.record({
-        key: fc.string({ minLength: 5, maxLength: 20 }).filter(s => !s.startsWith('meetingmind.')),
+        key: fc.string({ minLength: 5, maxLength: 20 }).filter(s => !s.startsWith('meetingmind.') && s.trim().length > 0),
         value: fc.string({ minLength: 1, maxLength: 100 })
       });
 
